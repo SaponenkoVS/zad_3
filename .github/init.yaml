@@ -1,0 +1,46 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Resources:
+  MyEcommerceBucket:
+    Type: "AWS::S3::Bucket"
+    Properties:
+      BucketName: "my-ecommerce-code-bucket"
+
+  MyEcommerceLambdaFunction:
+    Type: "AWS::Lambda::Function"
+    Properties:
+      Handler: "index.handler"
+      Role: "arn:aws:iam::account-id:role/execution_role"
+      Code:
+        S3Bucket: "my-ecommerce-code-bucket"
+        S3Key: "lambda_function.zip"
+      Runtime: "nodejs14.x"
+
+  MyEcommerceRDSInstance:
+    Type: "AWS::RDS::DBInstance"
+    Properties:
+      DBInstanceClass: "db.t2.micro"
+      AllocatedStorage: "20"
+      Engine: "mysql"
+      MasterUsername: "admin"
+      MasterUserPassword: "password"
+
+  MyEcommerceCloudFront:
+    Type: "AWS::CloudFront::Distribution"
+    Properties:
+      DistributionConfig:
+        Origins:
+          - DomainName: !GetAtt MyEcommerceBucket.DomainName
+            Id: "MyS3Origin"
+            S3OriginConfig:
+              OriginAccessIdentity: ""
+        Enabled: "true"
+        DefaultCacheBehavior:
+          TargetOriginId: "MyS3Origin"
+          ViewerProtocolPolicy: "allow-all"
+          AllowedMethods:
+            - "GET"
+            - "HEAD"
+          CachedMethods:
+            - "GET"
+            - "HEAD"
+        DefaultRootObject: "index.html"
